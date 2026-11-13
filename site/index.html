@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="paper">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>李杜诗心 · 李白与杜甫诗句相似度可视化</title>
+<meta name="description" content="基于 23,448 组诗句配对，观察李白与杜甫两部诗集的文本关联。">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-seal" aria-hidden="true">李<br>杜</div>
+    <div class="brand-text">
+      <strong>李杜诗心</strong>
+      <span>诗句相似度图谱</span>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="主导航">
+    <a href="#overview" class="nav-item is-active" data-view="overview">
+      <span class="nav-glyph">一</span><span class="nav-label">总览</span>
+    </a>
+    <a href="#similarity" class="nav-item" data-view="similarity">
+      <span class="nav-glyph">二</span><span class="nav-label">相似度</span>
+    </a>
+    <a href="#network" class="nav-item" data-view="network">
+      <span class="nav-glyph">三</span><span class="nav-label">诗作网络</span>
+    </a>
+    <a href="#compare" class="nav-item" data-view="compare">
+      <span class="nav-glyph">四</span><span class="nav-label">对照</span>
+    </a>
+    <a href="#search" class="nav-item" data-view="search">
+      <span class="nav-glyph">五</span><span class="nav-label">检索</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-foot">
+    <div class="data-note">
+      <span class="dot"></span>
+      <span>23,448 组配对 · 本地数据</span>
+    </div>
+    <div class="theme-switch" role="group" aria-label="主题">
+      <button class="theme-btn is-active" data-theme="paper" title="宣纸">纸</button>
+      <button class="theme-btn" data-theme="ink" title="墨色">墨</button>
+      <button class="theme-btn" data-theme="night" title="夜">夜</button>
+    </div>
+  </div>
+</aside>
+
+<main class="main" id="main">
+  <!-- ================= 总览 ================= -->
+  <section class="view is-active" id="view-overview" data-view="overview">
+    <header class="hero">
+      <div class="hero-kicker reveal">数字人文 · 唐宋诗语料 · 2026</div>
+      <h1 class="hero-title">
+        <span class="reveal">李白</span><span class="hero-x reveal">×</span><span class="reveal">杜甫</span>
+      </h1>
+      <p class="hero-sub reveal">
+        一千二百余年后，两座诗的高峰在同一张纸上相遇。<br>
+        我们从 23,448 组诗句配对出发，看他们的语言在何处彼此辨认。
+      </p>
+      <div class="hero-strip reveal">
+        <canvas id="heroCanvas" aria-label="诗作配对关系示意"></canvas>
+        <div class="hero-axis"><span>李白 · 1,084 首</span><span>杜甫 · 1,462 首</span></div>
+      </div>
+    </header>
+
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <div class="split">
+      <div class="panel reveal">
+        <div class="panel-head">
+          <div>
+            <h2>相似度分布</h2>
+            <p>每一组配对都被打上 7000–10000 的相似度分数</p>
+          </div>
+          <div class="panel-badge" id="histPeak">—</div>
+        </div>
+        <div class="chart-box tall"><canvas id="histCanvas"></canvas></div>
+      </div>
+      <div class="panel reveal">
+        <div class="panel-head">
+          <div>
+            <h2>阅读线索</h2>
+            <p>数据自己说出的四件事</p>
+          </div>
+        </div>
+        <ol class="findings" id="findingList"></ol>
+      </div>
+    </div>
+
+    <div class="panel reveal">
+      <div class="panel-head">
+        <div>
+          <h2>最相似的诗句</h2>
+          <p>若把两条诗行并置，几乎分不清谁先写下</p>
+        </div>
+        <a class="text-link" href="#search" data-jump="search">查看全部 →</a>
+      </div>
+      <div class="twin-grid" id="twinGrid"></div>
+    </div>
+  </section>
+
+  <!-- ================= 相似度 ================= -->
+  <section class="view" id="view-similarity" data-view="similarity">
+    <header class="page-head">
+      <div class="page-kicker">二 · 相似度</div>
+      <h1>语言的远近</h1>
+      <p>分数越高，两条诗行在字面与意象上越接近。拖动阈值，观察配对如何从两万三千条中收束。</p>
+    </header>
+
+    <div class="threshold-bar">
+      <div class="threshold-head">
+        <label for="simRange">相似度阈值</label>
+        <output id="simOut">7000</output>
+      </div>
+      <input type="range" id="simRange" min="7000" max="9000" step="10" value="7000">
+      <div class="threshold-presets" id="simPresets">
+        <button data-v="7000" class="is-active">全部</button>
+        <button data-v="7226">中位数</button>
+        <button data-v="7728">前 10%</button>
+        <button data-v="7938">前 5%</button>
+        <button data-v="8396">前 1%</button>
+      </div>
+    </div>
+
+    <div class="kpi-row compact" id="thresholdKpi"></div>
+
+    <div class="split wide-left">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>区间分布</h2><p>每 100 分为一档，柱高为配对数</p></div>
+        </div>
+        <div class="chart-box"><canvas id="distCanvas"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>累积曲线</h2><p>横轴为阈值，纵轴为保留的配对数</p></div>
+        </div>
+        <div class="chart-box"><canvas id="cumCanvas"></canvas></div>
+      </div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head"><div><h2>双方视角</h2><p>同一批配对，李杜各占一端</p></div></div>
+        <div class="mini-stats" id="sideStats"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>高分对</h2><p>当前阈值下最接近的十组</p></div></div>
+        <div class="rank-list" id="topPairs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 网络 ================= -->
+  <section class="view" id="view-network" data-view="network">
+    <header class="page-head">
+      <div class="page-kicker">三 · 诗作网络</div>
+      <h1>谁与谁相连</h1>
+      <p>每首诗是一个节点，一次配对是一条边。左侧为李白，右侧为杜甫；<br>节点越大、边越密，说明这首诗被卷入了越多对话。</p>
+    </header>
+
+    <div class="net-toolbar">
+      <div class="seg" role="group" aria-label="网络规模">
+        <button data-net="60" class="is-active">60 首</button>
+        <button data-net="120">120 首</button>
+        <button data-net="200">200 首</button>
+        <button data-net="ALL">全部</button>
+      </div>
+      <label class="check"><input type="checkbox" id="netLabels" checked> 显示诗题</label>
+      <label class="check"><input type="checkbox" id="netEdge"> 边权</label>
+      <div class="net-hint" id="netHint">拖动节点 · 滚轮缩放 · 点击查看</div>
+    </div>
+
+    <div class="net-wrap">
+      <div class="net-stage">
+        <canvas id="netCanvas"></canvas>
+        <div class="net-legend">
+          <span><i class="swatch lb"></i>李白</span>
+          <span><i class="swatch df"></i>杜甫</span>
+          <span class="muted">节点面积 ∝ 配对数</span>
+        </div>
+        <button class="net-reset" id="netReset">重置视图</button>
+      </div>
+      <aside class="detail-panel" id="netDetail">
+        <div class="detail-empty">
+          <p>点选任意诗作</p>
+          <span>查看它的配对对象与代表诗句</span>
+        </div>
+      </aside>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>配对最多的诗作</h2><p>被反复匹配的，往往是长篇或组诗</p></div>
+      </div>
+      <div class="rank-columns" id="poemRank"></div>
+    </div>
+  </section>
+
+  <!-- ================= 对照 ================= -->
+  <section class="view" id="view-compare" data-view="compare">
+    <header class="page-head">
+      <div class="page-kicker">四 · 对照</div>
+      <h1>句在诗中的位置</h1>
+      <p>一组配对来自两首诗的某一句。横轴是李白句在诗中的位置，纵轴是杜甫句的位置——密集的带状区域，提示着某种对齐方式。</p>
+    </header>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div><h2>位置散点</h2><p>颜色越亮，相似度越高；点的大小代表该位置上的配对数量</p></div>
+        <div class="legend-inline"><span class="grad"></span><span>低 → 高相似度</span></div>
+      </div>
+      <div class="chart-box tall"><canvas id="scatterCanvas"></canvas></div>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head"><div><h2>共同语汇</h2><p>同一组配对中双方诗句都出现的字，按出现组数排序</p></div></div>
+        <div class="char-grid" id="charGrid"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>诗长与配对</h2><p>横轴为诗的行数，纵轴为配对条目数（对数刻度）</p></div></div>
+        <div class="chart-box"><canvas id="lenCanvas"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 检索 ================= -->
+  <section class="view" id="view-search" data-view="search">
+    <header class="page-head">
+      <div class="page-kicker">五 · 检索</div>
+      <h1>寻一句诗</h1>
+      <p>输入一字、一词或一整句。例如「月」「长安」「醉如泥」。</p>
+    </header>
+
+    <div class="search-box">
+      <div class="search-input-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="q" type="search" placeholder="输入诗句、诗题或关键字" autocomplete="off" spellcheck="false">
+        <button class="search-clear" id="qClear" aria-label="清空">×</button>
+      </div>
+      <div class="search-filters">
+        <div class="seg" role="group" aria-label="检索范围">
+          <button data-scope="both" class="is-active">两侧都找</button>
+          <button data-scope="lb">只找李白句</button>
+          <button data-scope="df">只找杜甫句</button>
+        </div>
+        <div class="filter-field">
+          <label for="minSim">最低相似度 <b id="minSimOut">7000</b></label>
+          <input type="range" id="minSim" min="7000" max="9000" step="10" value="7000">
+        </div>
+        <div class="filter-field">
+          <label for="sortSel">排序</label>
+          <select id="sortSel">
+            <option value="sim">相似度从高到低</option>
+            <option value="simAsc">相似度从低到高</option>
+            <option value="len">句长</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-meta"><span id="resultCount">共 23,448 组</span><span id="resultTime"></span></div>
+    <div class="result-list" id="resultList"></div>
+    <div class="pager" id="pager"></div>
+  </section>
+</main>
+
+<!-- 诗作详情 -->
+<div class="modal" id="poemModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" data-close aria-label="关闭">×</button>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="data-model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
